@@ -5,8 +5,38 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Minestryger"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow"
+        SizeToContent="WidthAndHeight"
+        MinWidth="200" MinHeight="200" MaxWidth="1100" MaxHeight="900"
+        x:Name="Window">
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
 
+        <!-- Game Info Section -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" HorizontalAlignment="Center" Margin="10">
+            <TextBlock Text="Mines: " FontSize="16" FontWeight="Bold"/>
+            <TextBlock x:Name="MinesCounter" Text="10" FontSize="16" Margin="5,0,20,0"/>
+
+            <Button x:Name="ResetButton" Content="😊" FontSize="20" Width="40" Height="40" Margin="20"/>
+
+            <TextBlock Text="Time: " FontSize="16" FontWeight="Bold" Margin="20,0,0,0"/>
+            <TextBlock x:Name="Timer" Text="00:00" FontSize="16" Margin="5,0"/>
+        </StackPanel>
+
+        <!-- Game Board Grid -->
+        <Grid x:Name="GameBoard" Grid.Row="1" Margin="50">
+            <!-- The grid will be populated programmatically with buttons -->
+        </Grid>
+
+        <!-- Status Bar -->
+        <StatusBar Grid.Row="2">
+            <StatusBarItem>
+                <TextBlock x:Name="StatusText" Text="Ready to play!"/>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>
