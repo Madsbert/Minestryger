@@ -21,7 +21,7 @@
             <TextBlock Text="Mines: " FontSize="16" FontWeight="Bold"/>
             <TextBlock x:Name="MinesCounter" Text="10" FontSize="16" Margin="5,0,20,0"/>
 
-            <Button x:Name="ResetButton" Content="😊" FontSize="20" Width="40" Height="40" Margin="20"/>
+            <Button x:Name="ResetButton" Content="😊" FontSize="20" Width="40" Height="40" Margin="20" Click="Reset"/>
 
             <TextBlock Text="Time: " FontSize="16" FontWeight="Bold" Margin="20,0,0,0"/>
             <TextBlock x:Name="Timer" Text="00:00" FontSize="16" Margin="5,0"/>

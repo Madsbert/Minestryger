@@ -20,26 +20,24 @@ namespace Minestryger
         Medium,
         Hard
     }
-    
+
     public partial class MainWindow : Window
     {
         public MainWindow()
         {
             InitializeComponent();
-            SetDifficulty(DifficultyLevel.Easy);
+            SetDifficulty(DifficultyLevel.Hard);
             setWindowSize();
             spawnButtons();
-            InitializeTimer();
+            InitializeTimer();           
 
         }
 
         private int[,] _grid;
         private int _amountOfMines;
-        private int _minesCounter = 0;
         private int _amountOfRevealedCells;
         private int _amountOfRows;
         private int _amountOfColumns;
-        private double _timeElapsed;
         private bool _isRunning;
         private Stopwatch _stopWatch = new Stopwatch();
         private DifficultyLevel _difficultyLevel;
@@ -48,60 +46,90 @@ namespace Minestryger
         private DispatcherTimer _timer;
         private Random _random = new Random();
 
-
+        
         public void spawnButtons()
         {
+            GameBoard.Children.Clear();
+            GameBoard.RowDefinitions.Clear();
+            GameBoard.ColumnDefinitions.Clear();
+
+            _stopWatch.Reset();
+            Timer.Text = "00:00";
+            _amountOfRevealedCells = 0;
+            _isRunning = false;
             // Implementation for spawning buttons on the grid
             _grid = new int[_amountOfRows, _amountOfColumns];
 
-            GameBoard.MaxHeight= _amountOfRows * _buttonHeight;
+            GameBoard.MaxHeight = _amountOfRows * _buttonHeight;
             GameBoard.MaxWidth = _amountOfColumns * _buttonWidth;
-
 
             for (int row = 0; row < _amountOfRows; row++)
             {
-                GameBoard.RowDefinitions.Add(new RowDefinition ());
-                
+                GameBoard.RowDefinitions.Add(new RowDefinition());
+
                 for (int col = 0; col < _amountOfColumns; col++)
                 {
                     if (row == 0)
                     {
-                        GameBoard.ColumnDefinitions.Add(new ColumnDefinition ());                        
+                        GameBoard.ColumnDefinitions.Add(new ColumnDefinition());
                     }
-
-                    Button btn = new Cell(PlaceMines(),0,row,col);
+                    Cell btn = new Cell(false, row, col);
                     btn.Width = _buttonWidth;
                     btn.Height = _buttonHeight;
                     btn.Margin = new Thickness(0);
-                    btn.Click += Cell_Click;
+                    btn.Click += Cell_Click;                    
                     btn.MouseRightButtonUp += (s, e) => RightClickButton(s, e);
                     btn.IsEnabled = true;
+
 
                     GameBoard.Children.Add(btn);
                     Grid.SetRow(btn, row);
                     Grid.SetColumn(btn, col);
                 }
             }
+            PlaceMinesRandomly();
         }
         public void Cell_Click(object sender, RoutedEventArgs e)
         {
             _isRunning = true;
             _stopWatch.Start();
             _timer.Start();
+            _amountOfRevealedCells++;
+            Debug.WriteLine($"{_amountOfRevealedCells}");
 
             // Implementation for cell click event
             if (sender is Cell clickedCell)
-                {
+            {
                 clickedCell.IsRevealed = true;
                 clickedCell.IsEnabled = false;
                 if (clickedCell.IsMine)
                 {
+                    clickedCell.Content = "💣";
                     _isRunning = false;
-                    MessageBox.Show("Game Over! You clicked on a mine.");
                     GameBoard.IsEnabled = false;
                     _timer.Stop();
                     _stopWatch.Stop();
+                    RevealAllMines();
+                    MessageBox.Show("Game Over! You clicked on a mine.");
+                    
                 }
+                else
+                {
+                    CheckAdjacentMines(clickedCell);
+
+                    if ((_amountOfColumns * _amountOfRows) - _amountOfRevealedCells == _amountOfMines)
+                    {
+                        TimeSpan timeSpan = _stopWatch.Elapsed;
+                        _timer.Stop();
+                        _stopWatch.Stop();
+                        _isRunning = false;
+                        Timer.Text = timeSpan.TotalSeconds.ToString();
+                        RevealAllMines();
+                        MessageBox.Show($"YOU WON! WITH A TIME OF:{timeSpan.TotalSeconds:F2}");
+                        
+                    }
+                }
+                
             }
         }
         public void RightClickButton(object sender, RoutedEventArgs e)
@@ -113,9 +141,8 @@ namespace Minestryger
 
                 if (clickedCell.IsFlagged)
                 {
-                    // Set flag image
-                    // this.Icon = new BitmapImage(new Uri("pack://application:,,,/Resources/flag.png"));
-                    clickedCell.Content = "🚩"; // Simple flag emoji for now
+                    // Set flag image                   
+                    clickedCell.Content = "🚩";
                 }
                 else
                 {
@@ -146,6 +173,7 @@ namespace Minestryger
                     break;
             }
             _difficultyLevel = difficulty;
+            MinesCounter.Text = _amountOfMines.ToString();
         }
 
         public void setWindowSize()
@@ -173,27 +201,133 @@ namespace Minestryger
                 Timer.Text = timeSpan.ToString(@"mm\:ss");
             }
         }
-        public bool PlaceMines()
-        {       
-            if (_minesCounter == _amountOfMines)
+        private void PlaceMinesRandomly()
+        {
+            int minesPlaced = 0;
+
+            while (minesPlaced < _amountOfMines)
             {
-                return false;
-                
+                int randomRow = _random.Next(0, _amountOfRows);
+                int randomCol = _random.Next(0, _amountOfColumns);
+
+                // Get the cell at this position
+                Cell cell = GetCellAtPosition(randomRow, randomCol);
+
+                // If this cell doesn't already have a mine, place one
+                if (cell != null && !cell.IsMine)
+                {
+                    cell.IsMine = true;
+                    _grid[randomRow, randomCol] = 1; // Update your int grid if needed
+                    minesPlaced++;
+                }
             }
 
-            if (_random.Next(10) == 1)
+        }
+        // Helper method to get cell at specific position
+        private Cell GetCellAtPosition(int row, int col)
+        {
+            foreach (var child in GameBoard.Children)
             {
-                _minesCounter++;
+                if (child is Cell cell && Grid.GetRow(cell) == row && Grid.GetColumn(cell) == col)
+                {
+                    return cell;
+                }
+            }
+            return null;
+        }
 
-                return true;
+        public void CheckAdjacentMines(Cell clickedCell)
+        {
+            int mineCount = 0;
 
+
+            // Check all 8 adjacent cells
+            for (int rowOffset = -1; rowOffset <= 1; rowOffset++)
+            {
+                for (int colOffset = -1; colOffset <= 1; colOffset++) //positive Y value = down
+                {
+                    // Skip the center cell (current cell)
+                    if (rowOffset == 0 && colOffset == 0) { continue; }
+
+
+                    int checkRow = clickedCell.RowPos + rowOffset;
+                    int checkCol = clickedCell.ColPos + colOffset;
+
+                    // Check bounds
+                    if (checkRow >= 0 && checkRow < _amountOfRows &&
+                        checkCol >= 0 && checkCol < _amountOfColumns)
+                    {
+                        Cell adjacentCell = GetCellAtPosition(checkRow, checkCol);
+
+                        if (adjacentCell.IsMine)
+                        {
+                            mineCount++;
+                        }
+                    }
+                }
+
+            }
+            if (mineCount > 0)
+            {
+                clickedCell.Content = mineCount.ToString();
             }
             else
             {
-                PlaceMines();
-                return false;
+                clickedCell.Content = "";
+                RevealAdjacentEmptyCells(clickedCell);
             }
 
+        }    
+        
+       private void RevealAdjacentEmptyCells(Cell cell)
+        {
+            for (int rowOffset = -1; rowOffset <= 1; rowOffset++)
+            {
+                for (int colOffset = -1; colOffset <= 1; colOffset++)
+                {
+                    if (rowOffset == 0 && colOffset == 0) continue;
+
+                    int checkRow = cell.RowPos + rowOffset;
+                    int checkCol = cell.ColPos + colOffset;
+
+                    // Check bounds
+                    if (checkRow >= 0 && checkRow < _amountOfRows &&
+                        checkCol >= 0 && checkCol < _amountOfColumns)
+                    {
+                        Cell adjacentCell = GetCellAtPosition(checkRow, checkCol);
+
+                        // Only reveal if not already revealed, not a mine, and not flagged
+                        if (adjacentCell != null && !adjacentCell.IsRevealed && !adjacentCell.IsMine && !adjacentCell.IsFlagged)
+                        {
+                            adjacentCell.IsRevealed = true;
+                            adjacentCell.IsEnabled = false;
+                            _amountOfRevealedCells++;
+
+                            // Recursively check this cell's adjacent mines
+                            CheckAdjacentMines(adjacentCell);
+                        }
+                    }
+                }
+            }
+        }
+
+        private void Reset(Object sender, EventArgs e)
+        {
+            spawnButtons();
+            GameBoard.IsEnabled = true;
+                
+        }
+        private void RevealAllMines()
+        {
+            foreach (var child in GameBoard.Children)
+            {
+                if (child is Cell cell && cell.IsMine && !cell.IsRevealed)
+                {
+                    cell.IsRevealed = true;
+                    cell.IsEnabled = false;
+                    cell.Content = "💣";
+                }
+            }
         }
 
     }

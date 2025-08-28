@@ -7,7 +7,7 @@ using System.Windows.Controls;
 
 namespace Minestryger
 {
-    internal class Cell : Button
+    public class Cell : Button
     {
 
         bool _isRevealed;
@@ -19,12 +19,12 @@ namespace Minestryger
         Image _cellImage;
 
 
-        public Cell(bool isMine, int adjacentMines, int rowPos, int colPos)
+        public Cell(bool isMine, int rowPos, int colPos)
         {
             _isRevealed = false;
             _isFlagged = false;
             _isMine = isMine;
-            _adjacentMines = adjacentMines;
+            //_adjacentMines = adjacentMines;
             _rowPos = rowPos;
             _colPos = colPos;
         }
@@ -45,11 +45,11 @@ namespace Minestryger
             get { return _isMine; }
             set { _isMine = value; }
         }
-        public int AdjacentMines
-        {
-            get { return _adjacentMines; }
-            set { _adjacentMines = value; }
-        }
+        //public int AdjacentMines
+        //{
+        //    get { return _adjacentMines; }
+        //    set { _adjacentMines = value; }
+        //}
         public int RowPos
         {
             get { return _rowPos; }
